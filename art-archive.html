@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Art Archive</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #e2dcc4;
+      --blue: #0000ff;
+      --black: #000000;
+      --white: #ffffff;
+      --yellow: #ffff00;
+    }
+
+    html {
+      background: var(--blue);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--black);
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+
+    .top-bar {
+      height: 16px;
+      background: var(--blue);
+      border-bottom: 2px solid var(--black);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav {
+      display: flex;
+      gap: 22px;
+      padding: 14px 22px 6px;
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 500;
+      flex-wrap: wrap;
+      background: var(--bg);
+      position: sticky;
+      top: 16px;
+      z-index: 90;
+    }
+
+    .nav a {
+      color: var(--black);
+      text-decoration: none;
+    }
+
+    body,
+    a {
+      cursor: url('./cursor.png') 5 4, auto;
+    }
+
+    a:hover {
+      cursor: url('./cursor.png') 5 4, pointer;
+    }
+
+    .nav a:hover {
+      background: var(--yellow);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="top-bar"></div>
+
+  <div class="nav">
+    <a href="startpage.html">Start</a>
+    <a href="archivecatalogue.html">Catalogue</a>
+    <a href="timeline.html">Timeline</a>
+    <a href="regionsmap.html">Regions Map</a>
+    <a href="art-archive.html">Art Archive</a>
+    <a href="about.html">About</a>
+  </div>
+</body>
+
+</html>
