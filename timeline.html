@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Timeline</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #e2dcc4;
+            --card: #ffffff;
+            --white: #ffffff;
+            --black: #000000;
+            --blue: #0000ff;
+            --yellow: #ffff00;
+            --line: #111111;
+
+            --axis-y: 292px;
+            --card-gap: 56px;
+            --stage-h: 610px;
+
+            background-color: var(--blue) !important;
+        }
+
+        @font-face {
+            font-family: "LoRes 21 OT";
+            src: url("/fonts/LoRes21OT-Regular.woff2") format("woff2"),
+                url("/fonts/LoRes21OT-Regular.woff") format("woff");
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        html {
+            background-color: var(--blue) !important;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg) !important;
+            color: var(--black);
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            height: 16px;
+            background: var(--blue);
+            border-bottom: 2px solid var(--black);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav {
+            display: flex;
+            gap: 22px;
+            padding: 14px 22px 6px;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 500;
+            flex-wrap: wrap;
+            background: var(--bg);
+            position: sticky;
+            top: 16px;
+            z-index: 90;
+        }
+
+        .nav a {
+            color: var(--black);
+            text-decoration: none;
+        }
+
+        .nav a:hover {
+            background: var(--yellow);
+        }
+
+        .timeline-area {
+            position: relative;
+            height: calc(100vh - 58px);
+            padding: 8px 20px 20px;
+            overflow: hidden;
+        }
+
+        .title-box {
+            position: absolute;
+            left: 20px;
+            top: var(--axis-y);
+            transform: translateY(-50%);
+            width: 58px;
+            height: 192px;
+            border: 1px solid var(--black);
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 40;
+        }
+
+        .title-text {
+            font-family: "LoRes 21 OT", monospace;
+            font-size: 34px;
+            line-height: 1;
+            text-transform: uppercase;
+            transform: rotate(-90deg);
+            white-space: nowrap;
+        }
+
+        .timeline-shell {
+            height: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 0 0 22px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--black) var(--bg);
+        }
+
+        .timeline-shell::-webkit-scrollbar {
+            height: 14px;
+        }
+
+        .timeline-shell::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.08);
+            border-top: 1px solid var(--black);
+        }
+
+        .timeline-shell::-webkit-scrollbar-thumb {
+            background: var(--black);
+            border: 2px solid var(--bg);
+        }
+
+        .timeline-stage {
+            position: relative;
+            width: 3920px;
+            height: var(--stage-h);
+            min-height: var(--stage-h);
+        }
+
+        .timeline-anchor {
+            position: absolute;
+            top: var(--axis-y);
+            width: 1px;
+            height: 1px;
+            scroll-margin-left: 140px;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 100px;
+            right: 84px;
+            top: var(--axis-y);
+            height: 4px;
+            background: var(--line);
+            transform: translateY(-50%);
+            z-index: 20;
+        }
+
+        .timeline-line::after {
+            content: "";
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            width: 4px;
+            height: 4px;
+            background: var(--line);
+            transform: translateY(-50%);
+            box-shadow:
+                4px 0 0 var(--line),
+                8px -4px 0 var(--line),
+                8px 0 0 var(--line),
+                8px 4px 0 var(--line),
+                12px -8px 0 var(--line),
+                12px -4px 0 var(--line),
+                12px 0 0 var(--line),
+                12px 4px 0 var(--line),
+                12px 8px 0 var(--line),
+                16px -4px 0 var(--line),
+                16px 0 0 var(--line),
+                16px 4px 0 var(--line);
+        }
+
+        .year-tick {
+            position: absolute;
+            top: var(--axis-y);
+            width: 4px;
+            height: 24px;
+            background: var(--line);
+            transform: translate(-50%, -50%);
+            z-index: 21;
+        }
+
+        .year-tick.minor {
+            height: 16px;
+            width: 2px;
+        }
+
+        .year-label {
+            position: absolute;
+            background: var(--bg);
+            padding: 2px 6px;
+            border: 1px solid var(--black);
+            top: calc(var(--axis-y) + 18px);
+            transform: translateX(-50%);
+            font-family: "LoRes 21 OT", monospace;
+            font-size: 16px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            z-index: 21;
+        }
+
+        .year-label.minor {
+            top: calc(var(--axis-y) + 14px);
+            font-size: 12px;
+        }
+
+        .item {
+            position: absolute;
+            left: var(--x);
+            width: var(--w, 250px);
+            transform: translateX(-50%);
+            z-index: 8;
+        }
+
+        /* Top cards align by bottom edge, so variable-height cards still keep equal distance. */
+        .item.above {
+            top: auto;
+            bottom: calc(var(--stage-h) - var(--axis-y) + var(--card-gap));
+        }
+
+        /* Bottom cards align by top edge, matching the exact same gap. */
+        .item.below {
+            top: calc(var(--axis-y) + var(--card-gap));
+        }
+
+        .item {
+            transition: transform 0.12s ease;
+        }
+
+        .item:hover {
+            z-index: 80;
+        }
+
+        .item.above:hover {
+            transform: translateX(-50%) translateY(-8px) scale(1.01);
+        }
+
+        .item.below:hover {
+            transform: translateX(-50%) translateY(8px) scale(1.01);
+        }
+
+        .item:hover .card {
+            z-index: 82;
+            background: var(--yellow);
+        }
+
+        .item:hover .connector {
+            z-index: 81;
+        }
+
+        .item.last-hovered {
+            z-index: 70;
+        }
+
+        .item.last-hovered .card {
+            z-index: 72;
+        }
+
+        .connector {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: var(--card-gap);
+            border-left: 2px dotted var(--black);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .item.above .connector {
+            top: 100%;
+        }
+
+        .item.below .connector {
+            top: calc(-1 * (var(--card-gap)));
+        }
+
+        .card {
+            border: 1px solid var(--black);
+            background: var(--card);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+            z-index: 12;
+            min-height: 0;
+            height: auto;
+            overflow: visible;
+        }
+
+        .card-year {
+            display: inline-block;
+            width: fit-content;
+            border: 1px solid var(--black);
+            background: var(--yellow);
+            padding: 4px 7px 3px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: clamp(18px, 1.35vw, 25px);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: -0.03em;
+            line-height: 1.02;
+        }
+
+        .card-text {
+            margin: 0;
+            font-size: 12px;
+            line-height: 1.32;
+        }
+
+        .placeholder-box {
+            width: 100%;
+            height: 76px;
+            border: 1px solid var(--black);
+            background: var(--white);
+            position: relative;
+            overflow: hidden;
+            margin: 2px 0 2px;
+        }
+
+        .placeholder-box.small {
+            height: 52px;
+        }
+
+        .placeholder-box::before,
+        .placeholder-box::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-repeat: no-repeat;
+        }
+
+        .placeholder-box::before {
+            background-image: linear-gradient(to top left,
+                    transparent calc(50% - 0.5px),
+                    var(--black) calc(50% - 0.5px),
+                    var(--black) calc(50% + 0.5px),
+                    transparent calc(50% + 0.5px));
+        }
+
+        .placeholder-box::after {
+            background-image: linear-gradient(to top right,
+                    transparent calc(50% - 0.5px),
+                    var(--black) calc(50% - 0.5px),
+                    var(--black) calc(50% + 0.5px),
+                    transparent calc(50% + 0.5px));
+        }
+
+        .placeholder-label {
+            position: absolute;
+            left: 8px;
+            bottom: 8px;
+            z-index: 1;
+            background: var(--white);
+            border: 1px solid var(--black);
+            padding: 4px 6px 3px;
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        body,
+        a {
+            cursor: url("./cursor.png") 5 4, auto;
+        }
+
+        a:hover {
+            cursor: url("./cursor.png") 5 4, pointer;
+        }
+
+        @media (max-width: 900px) {
+            .title-box {
+                width: 44px;
+                height: 160px;
+                left: 16px;
+            }
+
+            .title-text {
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .nav {
+                gap: 14px;
+            }
+
+            .timeline-area {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+
+            .title-box {
+                left: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="top-bar"></div>
+
+    <div class="nav">
+        <a href="homepage.html">Home</a>
+        <a href="index.html">Start</a>
+        <a href="archivecatalogue.html">Catalogue</a>
+        <a href="emulators.html">Emulators</a>
+        <a href="timeline.html">Timeline</a>
+        <a href="regionsmap.html">Regions Map</a>
+        <a href="art-archive.html">Art Archive</a>
+        <a href="about.html">About</a>
+    </div>
+
+    <main class="timeline-area">
+        <div class="title-box">
+            <div class="title-text">Timeline</div>
+        </div>
+
+        <section class="timeline-shell" id="timelineShell">
+            <div class="timeline-stage">
+                <div class="timeline-line"></div>
+
+                <span class="timeline-anchor" id="able-archer" style="left: 980px;"></span>
+                <span class="timeline-anchor" id="sdi" style="left: 1060px;"></span>
+                <span class="timeline-anchor" id="cuban-missile-memory" style="left: 1160px;"></span>
+                <span class="timeline-anchor" id="yugoslavia-1999" style="left: 3060px;"></span>
+
+
+                <div class="year-tick major" style="left: 200px;"></div>
+                <div class="year-label major" style="left: 200px;">1973</div>
+
+                <div class="year-tick major" style="left: 760px;"></div>
+                <div class="year-label major" style="left: 760px;">1980</div>
+
+                <div class="year-tick major" style="left: 1160px;"></div>
+                <div class="year-label major" style="left: 1160px;">1985</div>
+
+                <div class="year-tick major" style="left: 1920px;"></div>
+                <div class="year-label major" style="left: 1920px;">1991</div>
+
+                <div class="year-tick major" style="left: 2520px;"></div>
+                <div class="year-label major" style="left: 2520px;">1995</div>
+
+                <div class="year-tick major" style="left: 3060px;"></div>
+                <div class="year-label major" style="left: 3060px;">2000</div>
+
+                <div class="year-tick major" style="left: 3660px;"></div>
+                <div class="year-label major" style="left: 3660px;">2003+</div>
+
+                <div class="item above" style="--x: 200px;">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1973</div>
+                        <h2 class="card-title">Computer Wargaming Precursors</h2>
+                        <p class="card-text">Cold War simulation and military-computing roots.</p>
+                    </div>
+                </div>
+
+                <div class="item below" style="--x: 200px;">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1973</div>
+                        <h2 class="card-title">Chile coup / oil crisis / détente under strain</h2>
+                        <div class="placeholder-box small"><span class="placeholder-label">Image Placeholder</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item below" id="grenada-1983" style="--x: 980px;">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1983</div>
+                        <h2 class="card-title">Grenada invasion / Able Archer tensions</h2>
+                    </div>
+                </div>
+
+                <div class="item above" style="--x: 1060px">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1984</div>
+                        <h2 class="card-title">Raid Over Moscow</h2>
+                        <div class="placeholder-box"><span class="placeholder-label">Image Placeholder</span></div>
+                        <p class="card-text">Arcade Cold War fantasy and anti-Soviet framing.</p>
+                    </div>
+                </div>
+
+                <div class="item above" style="--x: 1160px">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1985</div>
+                        <h2 class="card-title">Balance of Power</h2>
+                        <div class="placeholder-box"><span class="placeholder-label">Image Placeholder</span></div>
+                        <p class="card-text">Nuclear diplomacy as interactive strategy.</p>
+                    </div>
+                </div>
+
+                <div class="item below" style="--x: 1160px;">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1985</div>
+                        <h2 class="card-title">Reagan–Gorbachev thaw</h2>
+                    </div>
+                </div>
+
+                <div class="item below" id="iran-contra" style="--x: 1420px;">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1986–88</div>
+                        <h2 class="card-title">Iran-Contra and Central American conflict</h2>
+                        <div class="placeholder-box small"><span class="placeholder-label">Image Placeholder</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item above" style="--x: 1580px;">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1988</div>
+                        <h2 class="card-title">Hidden Agenda</h2>
+                        <div class="placeholder-box"><span class="placeholder-label">Image Placeholder</span></div>
+                        <p class="card-text">Revolution, elections, and US influence.</p>
+                    </div>
+                </div>
+
+                <div class="item below" id="1989-fall-of-the-wall" style="--x: 1700px;">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1989</div>
+                        <h2 class="card-title">Fall of the Berlin Wall</h2>
+                    </div>
+                </div>
+
+                <div class="item above" style="--x: 1920px">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1991</div>
+                        <h2 class="card-title">Crisis in the Kremlin</h2>
+                        <div class="placeholder-box"><span class="placeholder-label">Image Placeholder</span></div>
+                        <p class="card-text">Late-Soviet collapse as strategic play.</p>
+                    </div>
+                </div>
+
+                <div class="item below" id="first-gulf-war" style="--x: 1920px">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1991</div>
+                        <h2 class="card-title">First Gulf War / USSR collapse</h2>
+                    </div>
+                </div>
+
+                <div class="item above" style="--x: 2160px">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1992</div>
+                        <h2 class="card-title">Floor 13</h2>
+                        <div class="placeholder-box"><span class="placeholder-label">Image Placeholder</span></div>
+                        <p class="card-text">State manipulation and media control.</p>
+                    </div>
+                </div>
+
+                <div class="item below" style="--x: 2520px">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1992–95</div>
+                        <h2 class="card-title">Post-Cold War intervention politics</h2>
+                        <div class="placeholder-box small"><span class="placeholder-label">Image Placeholder</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item above" style="--x: 2300px">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">1993</div>
+                        <h2 class="card-title">Shadow President</h2>
+                        <div class="placeholder-box"><span class="placeholder-label">Image Placeholder</span></div>
+                        <p class="card-text">Covert action and global crisis management.</p>
+                    </div>
+                </div>
+
+                <div class="item above" style="--x: 3520px; --w: 330px">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">2000s</div>
+                        <h2 class="card-title">Under Ash / America’s Army / Special Force / September 12th</h2>
+                        <div class="placeholder-box"><span class="placeholder-label">Image Placeholder</span></div>
+                        <p class="card-text">Recruitment, resistance, and critique.</p>
+                    </div>
+                </div>
+
+                <div class="item below" style="--x: 3520px; --w: 320px">
+                    <div class="connector"></div>
+                    <div class="card">
+                        <div class="card-year">2001–03</div>
+                        <h2 class="card-title">9/11, Second Intifada, Iraq War</h2>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const shell = document.getElementById('timelineShell');
+        shell.addEventListener('wheel', (event) => {
+            if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+                event.preventDefault();
+                shell.scrollLeft += event.deltaY;
+            }
+        }, { passive: false });
+
+
+        const timelineItems = document.querySelectorAll('.item');
+        timelineItems.forEach((item) => {
+            item.addEventListener('mouseenter', () => {
+                timelineItems.forEach((otherItem) => {
+                    otherItem.classList.remove('last-hovered');
+                });
+                item.classList.add('last-hovered');
+            });
+        });
+    </script>
+
+
+    <script>
+        (function () {
+            let audioContext = null;
+
+            function getAudioContext() {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                return audioContext;
+            }
+
+            function playTone(frequency, duration, volume, delay) {
+                const ctx = getAudioContext();
+                const startTime = ctx.currentTime + (delay || 0);
+                const oscillator = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(frequency, startTime);
+
+                gain.gain.setValueAtTime(volume, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+                oscillator.connect(gain);
+                gain.connect(ctx.destination);
+
+                oscillator.start(startTime);
+                oscillator.stop(startTime + duration);
+            }
+
+            function playClickSound() {
+                playTone(620, 0.035, 0.045, 0);
+                playTone(310, 0.025, 0.03, 0.025);
+            }
+
+            function playRunSound() {
+                playTone(220, 0.045, 0.11, 0);
+                playTone(440, 0.045, 0.10, 0.045);
+                playTone(880, 0.055, 0.09, 0.09);
+            }
+
+            function isRunControl(element) {
+                const control = element.closest('.button, button, a');
+                if (!control) return false;
+
+                const onclickValue = control.getAttribute('onclick') || '';
+                const controlText = (control.textContent || '').trim().toLowerCase();
+
+                return onclickValue.includes('toggleGame') || controlText === 'run' || controlText === 'stop';
+            }
+
+            function isClickableElement(element) {
+                return element.closest('a, button, input, select, textarea, .button, .card-link, .nav-card, .region-card, .hotspot a, .start-button, .click-sound');
+            }
+
+            function shouldIgnoreSound(element) {
+                return element.closest('.screen.running');
+            }
+
+            document.addEventListener('pointerdown', function (event) {
+                const target = event.target;
+
+                if (!target || shouldIgnoreSound(target) || !isClickableElement(target)) {
+                    return;
+                }
+
+                if (isRunControl(target)) {
+                    playRunSound();
+                } else {
+                    playClickSound();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+
+                const target = event.target;
+
+                if (!target || shouldIgnoreSound(target) || !isClickableElement(target)) {
+                    return;
+                }
+
+                if (isRunControl(target)) {
+                    playRunSound();
+                } else {
+                    playClickSound();
+                }
+            });
+        })();
+    </script>
+
+</body>
+
+</html>

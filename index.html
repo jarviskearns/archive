@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #e2dcc4;
+      --blue: #0000ff;
+      --black: #000000;
+      --white: #ffffff;
+      --yellow: #ffff00;
+      --muted: #d7d1bb;
+    }
+
+    @font-face {
+      font-family: "LoRes 21 OT";
+      src: url("/fonts/LoRes21OT-Regular.woff2") format("woff2"),
+        url("/fonts/LoRes21OT-Regular.woff") format("woff");
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    html {
+      background: var(--blue);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--black);
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    body,
+    a,
+    button {
+      cursor: url("./cursor.png") 5 4, auto;
+    }
+
+    a:hover,
+    button:hover {
+      cursor: url("./cursor.png") 5 4, pointer;
+    }
+
+    .top-bar {
+      height: 16px;
+      background: var(--blue);
+      border-bottom: 2px solid var(--black);
+    }
+
+    .nav {
+      display: flex;
+      gap: 22px;
+      padding: 14px 22px 6px;
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 500;
+      flex-wrap: wrap;
+      background: var(--bg);
+      position: relative;
+      z-index: 30;
+    }
+
+    .nav a {
+      color: var(--black);
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      background: var(--yellow);
+    }
+
+    .frame {
+      min-height: calc(100vh - 58px);
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .graphic-stage {
+      position: relative;
+      min-height: calc(100vh - 58px);
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+
+    .ui-label,
+    .ui-version {
+      position: absolute;
+      z-index: 7;
+      border: 1px solid var(--black);
+      padding: 6px 8px 5px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      line-height: 1.15;
+    }
+
+    .ui-label {
+      top: 34px;
+      left: 34px;
+      background: var(--white);
+      max-width: 220px;
+    }
+
+    .ui-version {
+      top: 34px;
+      right: 34px;
+      background: var(--muted);
+      max-width: min(34vw, 360px);
+      text-align: right;
+    }
+
+    .art-layer {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .symbol {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+    }
+
+    .symbol.left {
+      left: 8%;
+      width: 30%;
+      height: 44%;
+      top: 35%;
+      z-index: 9;
+    }
+
+    .symbol.right {
+      right: 11%;
+      width: 20%;
+      height: 34%;
+      top: 40%;
+      z-index: 9;
+    }
+
+    .symbol.center {
+      left: 50%;
+      top: 40%;
+      transform: translate(-50%, -50%);
+      width: min(72vw, 1350px);
+      height: 110%;
+      z-index: 2;
+    }
+
+    .bitmap-wrap {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .bitmap-img {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      transform-origin: center center;
+      filter: url(#bitmapTransparentBG);
+    }
+
+    .globe-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+    }
+
+    .globe-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .side-wrap {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: grid;
+      place-items: center;
+      overflow: visible;
+    }
+
+    .side-gif {
+      display: block;
+      max-width: none;
+      max-height: none;
+      width: 18%;
+      height: auto;
+      object-fit: contain;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      filter:
+        drop-shadow(-1px 0 0 var(--bg)) drop-shadow(1px 0 0 var(--bg)) drop-shadow(0 -1px 0 var(--bg)) drop-shadow(0 1px 0 var(--bg));
+      transform-origin: center center;
+    }
+
+    .symbol.left .side-gif {
+      transform: translateX(-12px) scale(5.2);
+    }
+
+    .symbol.right .side-gif {
+      transform: scale(4.1);
+    }
+
+    .asset-loader {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity .14s linear;
+    }
+
+    .loaded .asset-loader {
+      opacity: 0;
+    }
+
+    .loader-bars {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(to bottom,
+          var(--bg) 0 12px,
+          transparent 12px 20px);
+      transform-origin: right center;
+      animation: beigeWipe 1.15s steps(14, end) forwards;
+    }
+
+    .side-asset {
+      position: relative;
+      display: inline-block;
+      transform-origin: center center;
+    }
+
+    .side-asset .side-gif {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .globe-wrap .asset-loader {
+      border-radius: 50%;
+      overflow: hidden;
+    }
+
+    @keyframes beigeWipe {
+      from {
+        transform: scaleX(1);
+      }
+
+      to {
+        transform: scaleX(0);
+      }
+    }
+
+    .start-button {
+      position: absolute;
+      left: 50%;
+      top: 62.5%;
+      transform: translate(-50%, -50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      padding: 10px 18px 8px;
+      border: 2px solid var(--black);
+      background: var(--white);
+      color: var(--black);
+      text-decoration: none;
+      font-family: "LoRes 21 OT", monospace;
+      font-size: clamp(20px, 2.2vw, 34px);
+      line-height: 1;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      z-index: 8;
+    }
+
+    .start-button:hover,
+    .start-button:focus {
+      background: var(--yellow);
+      outline: none;
+    }
+
+    @media (max-width: 1100px) {
+      .ui-version {
+        max-width: min(42vw, 360px);
+      }
+
+      .symbol.left {
+        left: 8%;
+        width: 34%;
+        height: 34%;
+        top: 40%;
+      }
+
+      .symbol.right {
+        right: 7%;
+        width: 22%;
+        height: 25%;
+        top: 43%;
+      }
+
+      .symbol.center {
+        width: 88vw;
+        height: 110%;
+        top: 55%;
+      }
+
+      .start-button {
+        font-size: clamp(18px, 2.4vw, 30px);
+        padding: 9px 16px 7px;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .graphic-stage::before {
+        inset: 14px;
+      }
+
+      .ui-label {
+        top: 26px;
+        left: 26px;
+        max-width: 170px;
+      }
+
+      .ui-version {
+        top: 26px;
+        right: 26px;
+        max-width: 40vw;
+        font-size: 10px;
+      }
+
+      .symbol.left {
+        left: 4%;
+        width: 36%;
+        height: 25%;
+        top: 45%;
+      }
+
+      .symbol.right {
+        right: 4%;
+        width: 23%;
+        height: 18%;
+        top: 47%;
+      }
+
+      .symbol.center {
+        width: 100vw;
+        height: 105%;
+        top: 55%;
+      }
+
+      .start-button {
+        font-size: clamp(18px, 3.4vw, 26px);
+        padding: 8px 14px 6px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .graphic-stage::before {
+        inset: 10px;
+      }
+
+      .ui-label {
+        top: 18px;
+        left: 18px;
+        font-size: 10px;
+        max-width: 140px;
+      }
+
+      .ui-version {
+        top: 18px;
+        right: 18px;
+        font-size: 9px;
+        max-width: 44vw;
+      }
+
+      .symbol.left {
+        left: 0%;
+        width: 40%;
+        height: 18%;
+        top: 49%;
+      }
+
+      .symbol.right {
+        right: 1%;
+        width: 25%;
+        height: 13%;
+        top: 50%;
+      }
+
+      .symbol.center {
+        width: 114vw;
+        height: 98%;
+        top: 56%;
+      }
+
+      .start-button {
+        font-size: clamp(16px, 4.6vw, 22px);
+        padding: 7px 12px 5px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+    <filter id="bitmapTransparentBG">
+      <feColorMatrix type="saturate" values="0" result="gray" />
+      <feComponentTransfer in="gray" result="maskRGB">
+        <feFuncR type="discrete" tableValues="1 1 1 0 0" />
+        <feFuncG type="discrete" tableValues="1 1 1 0 0" />
+        <feFuncB type="discrete" tableValues="1 1 1 0 0" />
+      </feComponentTransfer>
+      <feColorMatrix in="maskRGB" type="luminanceToAlpha" result="maskAlpha" />
+      <feFlood flood-color="#000000" result="solidBlack" />
+      <feComposite in="solidBlack" in2="maskAlpha" operator="in" />
+    </filter>
+
+    <filter id="bitmapTwoToneBeige">
+      <feColorMatrix in="SourceGraphic" type="saturate" values="0" result="gray" />
+      <feComponentTransfer in="gray">
+        <feFuncR type="discrete" tableValues="0 0 0 0.886 0.886" />
+        <feFuncG type="discrete" tableValues="0 0 0 0.863 0.863" />
+        <feFuncB type="discrete" tableValues="0 0 0 0.769 0.769" />
+        <feFuncA type="identity" />
+      </feComponentTransfer>
+    </filter>
+  </svg>
+
+  <div class="top-bar"></div>
+
+  <div class="nav">
+    <a href="homepage.html">Home</a>
+    <a href="index.html">Start</a>
+    <a href="archivecatalogue.html">Catalogue</a>
+    <a href="emulators.html">Emulators</a>
+    <a href="timeline.html">Timeline</a>
+    <a href="regionsmap.html">Regions Map</a>
+    <a href="art-archive.html">Art Archive</a>
+    <a href="about.html">About</a>
+  </div>
+
+  <div class="frame">
+    <div class="graphic-stage">
+      <div class="ui-label">Balance of Power</div>
+      <div class="ui-version">Videogame Propaganda Archive 1980-2000</div>
+
+      <div class="art-layer">
+        <div class="symbol left">
+          <div class="bitmap-wrap side-wrap">
+            <div class="side-asset eagle-asset">
+              <img class="side-gif" id="eagleGif" alt="Eagle emblem"
+                src="./eagle_working_twotone_chunky_transparent_less-pixelated.gif" />
+              <div class="asset-loader" aria-hidden="true">
+                <div class="loader-bars"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="symbol center">
+          <div class="globe-wrap">
+            <canvas class="globe-canvas" id="globeCanvas" width="260" height="260" aria-label="Spinning globe"></canvas>
+            <div class="asset-loader" aria-hidden="true">
+              <div class="loader-bars"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="symbol right">
+          <div class="bitmap-wrap side-wrap">
+            <div class="side-asset hammer-asset">
+              <img class="side-gif" id="hammerGif" alt="Hammer and sickle emblem"
+                src="./hammer_twotone_chunky_transparent.gif" />
+              <div class="asset-loader" aria-hidden="true">
+                <div class="loader-bars"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a class="start-button" href="homepage.html">Start</a>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById('globeCanvas');
+      const ctx = canvas.getContext('2d', { alpha: true });
+      ctx.imageSmoothingEnabled = false;
+
+      const W = canvas.width;
+      const H = canvas.height;
+      const CX = W / 2;
+      const CY = H / 2;
+      const radius = 108;
+
+      const textureImg = new Image();
+      textureImg.src = 'data:image/png;base64,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';
+
+      function putPixel(imageData, x, y, r, g, b, a) {
+        if (x < 0 || y < 0 || x >= W || y >= H) return;
+        const idx = (y * W + x) * 4;
+        imageData.data[idx] = r;
+        imageData.data[idx + 1] = g;
+        imageData.data[idx + 2] = b;
+        imageData.data[idx + 3] = a;
+      }
+
+      textureImg.onload = function () {
+        const texCanvas = document.createElement('canvas');
+        texCanvas.width = textureImg.width;
+        texCanvas.height = textureImg.height;
+        const texCtx = texCanvas.getContext('2d', { willReadFrequently: true });
+        texCtx.drawImage(textureImg, 0, 0);
+        const tex = texCtx.getImageData(0, 0, texCanvas.width, texCanvas.height).data;
+
+        function sampleLand(u, v) {
+          const x = Math.max(0, Math.min(texCanvas.width - 1, Math.floor((((u % 1) + 1) % 1) * texCanvas.width)));
+          const y = Math.max(0, Math.min(texCanvas.height - 1, Math.floor(v * texCanvas.height)));
+          const i = (y * texCanvas.width + x) * 4;
+          return tex[i] < 64;
+        }
+
+        function renderGlobe(rotation) {
+          const frame = ctx.createImageData(W, H);
+          for (let i = 0; i < frame.data.length; i += 4) {
+            frame.data[i + 3] = 0;
+          }
+
+          // Pass 1: fill the globe interior with the page beige.
+          for (let py = 0; py < H; py++) {
+            for (let px = 0; px < W; px++) {
+              const nx = (px - CX) / radius;
+              const ny = (py - CY) / radius;
+              const rr = nx * nx + ny * ny;
+              if (rr > 1) continue;
+              putPixel(frame, px, py, 226, 220, 196, 255);
+            }
+          }
+
+          // Pass 2: draw explicit graticule curves so the latitude lines
+          // project correctly all the way toward the poles.
+          const deg = Math.PI / 180;
+
+          // Latitude lines: frequent and 1px-looking.
+          for (let latDeg = -80; latDeg <= 80; latDeg += 10) {
+            const phi = latDeg * deg;
+            for (let lonDeg = -180; lonDeg <= 180; lonDeg += 0.5) {
+              const lambda = lonDeg * deg;
+              const lam = lambda - rotation;
+
+              const cosPhi = Math.cos(phi);
+              const z = cosPhi * Math.cos(lam);
+              if (z < 0) continue;
+
+              const x = CX + radius * cosPhi * Math.sin(lam);
+              const y = CY - radius * Math.sin(phi);
+
+              putPixel(frame, Math.round(x), Math.round(y), 0, 0, 0, 175);
+            }
+          }
+
+          // Add a couple of high-latitude rings so the top/bottom read better.
+          for (const latDeg of [-85, 85]) {
+            const phi = latDeg * deg;
+            for (let lonDeg = -180; lonDeg <= 180; lonDeg += 0.5) {
+              const lambda = lonDeg * deg;
+              const lam = lambda - rotation;
+
+              const cosPhi = Math.cos(phi);
+              const z = cosPhi * Math.cos(lam);
+              if (z < 0) continue;
+
+              const x = CX + radius * cosPhi * Math.sin(lam);
+              const y = CY - radius * Math.sin(phi);
+
+              putPixel(frame, Math.round(x), Math.round(y), 0, 0, 0, 175);
+            }
+          }
+
+          // Longitude lines: a little lighter than the latitude lines.
+          for (let lonDeg = -180; lonDeg < 180; lonDeg += 18) {
+            const lambda = lonDeg * deg;
+            for (let latDeg = -89; latDeg <= 89; latDeg += 0.5) {
+              const phi = latDeg * deg;
+              const lam = lambda - rotation;
+
+              const cosPhi = Math.cos(phi);
+              const z = cosPhi * Math.cos(lam);
+              if (z < 0) continue;
+
+              const x = CX + radius * cosPhi * Math.sin(lam);
+              const y = CY - radius * Math.sin(phi);
+
+              putPixel(frame, Math.round(x), Math.round(y), 0, 0, 0, 135);
+            }
+          }
+
+          // Pass 3: draw land on top, so the continents can cross over the grid.
+          for (let py = 0; py < H; py++) {
+            for (let px = 0; px < W; px++) {
+              const nx = (px - CX) / radius;
+              const ny = (py - CY) / radius;
+              const rr = nx * nx + ny * ny;
+              if (rr > 1) continue;
+
+              const nz = Math.sqrt(1 - rr);
+              const lat = Math.asin(Math.max(-1, Math.min(1, -ny)));
+              let lon = Math.atan2(nx, nz) + rotation;
+
+              const u = (lon + Math.PI) / (2 * Math.PI);
+              const v = (Math.PI / 2 - lat) / Math.PI;
+
+              const land = sampleLand(u, v);
+              if (land) {
+                putPixel(frame, px, py, 0, 0, 0, 255);
+              }
+            }
+          }
+
+          // Crisp outline.
+          for (let a = 0; a < Math.PI * 2; a += 0.004) {
+            const x = Math.round(CX + Math.cos(a) * radius);
+            const y = Math.round(CY + Math.sin(a) * radius);
+            putPixel(frame, x, y, 0, 0, 0, 255);
+          }
+
+          ctx.putImageData(frame, 0, 0);
+        }
+
+        let last = 0;
+        let rotation = 0;
+
+        function tick(ts) {
+          if (!last) last = ts;
+          const dt = Math.min(32, ts - last);
+          last = ts;
+          rotation += dt * 0.00035;
+          renderGlobe(rotation);
+          requestAnimationFrame(tick);
+        }
+
+        renderGlobe(0);
+        requestAnimationFrame(tick);
+      };
+    })();
+  </script>
+
+  <script>
+    (function () {
+      const eagleGif = document.getElementById('eagleGif');
+      const hammerGif = document.getElementById('hammerGif');
+      const eagleAsset = document.querySelector('.eagle-asset');
+      const hammerAsset = document.querySelector('.hammer-asset');
+
+      function applyPixelatedSizing() {
+        if (eagleAsset) {
+          eagleAsset.style.width = '18%';
+        }
+        if (hammerAsset) {
+          hammerAsset.style.width = '18%';
+        }
+        if (eagleGif) {
+          eagleGif.style.height = 'auto';
+          eagleGif.style.transform = 'translateX(-12px) scale(5.2)';
+        }
+        if (hammerGif) {
+          hammerGif.style.height = 'auto';
+          hammerGif.style.transform = 'scale(4.1)';
+        }
+      }
+
+      function finishLoading() {
+        document.body.classList.add('loaded');
+      }
+
+      window.addEventListener('resize', applyPixelatedSizing);
+      if (eagleGif) eagleGif.addEventListener('load', applyPixelatedSizing);
+      if (hammerGif) hammerGif.addEventListener('load', applyPixelatedSizing);
+
+      window.addEventListener('load', function () {
+        applyPixelatedSizing();
+        setTimeout(finishLoading, 1180);
+      });
+
+      applyPixelatedSizing();
+      setTimeout(applyPixelatedSizing, 100);
+      setTimeout(finishLoading, 1350);
+    })();
+  </script>
+
+
+
+  <script>
+    (function () {
+      let audioContext = null;
+
+      function getAudioContext() {
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+        return audioContext;
+      }
+
+      function playTone(frequency, duration, volume, delay) {
+        const ctx = getAudioContext();
+        const startTime = ctx.currentTime + (delay || 0);
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(frequency, startTime);
+
+        gain.gain.setValueAtTime(volume, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        oscillator.connect(gain);
+        gain.connect(ctx.destination);
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+      }
+
+      function playClickSound() {
+        playTone(620, 0.035, 0.045, 0);
+        playTone(310, 0.025, 0.03, 0.025);
+      }
+
+      function playRunSound() {
+        playTone(220, 0.045, 0.11, 0);
+        playTone(440, 0.045, 0.10, 0.045);
+        playTone(880, 0.055, 0.09, 0.09);
+      }
+
+      function isRunControl(element) {
+        const control = element.closest('.button, button, a');
+        if (!control) return false;
+
+        const onclickValue = control.getAttribute('onclick') || '';
+        const controlText = (control.textContent || '').trim().toLowerCase();
+
+        return onclickValue.includes('toggleGame') || controlText === 'run' || controlText === 'stop';
+      }
+
+      function isClickableElement(element) {
+        return element.closest('a, button, input, select, textarea, .button, .card-link, .nav-card, .region-card, .hotspot a, .start-button, .click-sound');
+      }
+
+      function shouldIgnoreSound(element) {
+        return element.closest('.screen.running');
+      }
+
+      document.addEventListener('pointerdown', function (event) {
+        const target = event.target;
+
+        if (!target || shouldIgnoreSound(target) || !isClickableElement(target)) {
+          return;
+        }
+
+        if (isRunControl(target)) {
+          playRunSound();
+        } else {
+          playClickSound();
+        }
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+
+        const target = event.target;
+
+        if (!target || shouldIgnoreSound(target) || !isClickableElement(target)) {
+          return;
+        }
+
+        if (isRunControl(target)) {
+          playRunSound();
+        } else {
+          playClickSound();
+        }
+      });
+    })();
+  </script>
+
+</body>
+
+</html>

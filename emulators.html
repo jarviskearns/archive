@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emulators</title>
+  <link href="https://v8.js-dos.com/latest/js-dos.css" rel="stylesheet">
+  <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #e2dcc4;
+      --card: #ffffff;
+      --white: #ffffff;
+      --black: #000000;
+      --blue: #0000ff;
+      --yellow: #ffff00;
+      --muted: #d7d1bb;
+      background-color: var(--blue) !important;
+    }
+
+    @font-face {
+      font-family: "LoRes 21 OT";
+      src: url("/fonts/LoRes21OT-Regular.woff2") format("woff2"),
+        url("/fonts/LoRes21OT-Regular.woff") format("woff");
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    html {
+      background-color: var(--blue) !important;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+      background: var(--bg) !important;
+      color: var(--black);
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+
+    body,
+    a,
+    button,
+    .button,
+    .floppy-button,
+    .drive-button {
+      cursor: url("./cursor.png") 5 4, auto;
+    }
+
+    a:hover,
+    button:hover,
+    .button:hover,
+    .floppy-button:hover,
+    .drive-button:hover {
+      cursor: url("./cursor.png") 5 4, pointer;
+    }
+
+    .jsdos-rso {
+      background: var(--black) !important;
+      --p: 240 100% 50% !important;
+      --pf: 240 100% 40% !important;
+      --pc: 0 0% 100% !important;
+      --b1: 0 0% 100% !important;
+      --b2: 48 34% 83% !important;
+      --b3: 48 34% 73% !important;
+      --bc: 0 0% 0% !important;
+      --rounded-btn: 0px !important;
+      --rounded-box: 0px !important;
+      --sidebar-width: 0px !important;
+      padding-left: 0 !important;
+      margin-left: 0 !important;
+      grid-template-columns: 0 1fr !important;
+      display: block !important;
+      width: 100% !important;
+    }
+
+    .jsdos-rso .sidebar,
+    .jsdos-rso .sidebar-thin,
+    .jsdos-rso [class*="sidebar"],
+    .jsdos-rso [class*="menu"],
+    .jsdos-rso [class*="panel"]:has([class*="fullscreen"]),
+    .jsdos-rso [class*="panel"]:has([class*="keyboard"]),
+    .jsdos-rso [class*="panel"]:has([class*="gamepad"]),
+    .jsdos-rso [class*="panel"]:has([class*="settings"]),
+    .jsdos-rso [class*="panel"]:has([class*="dots"]) {
+      display: none !important;
+      width: 0 !important;
+      min-width: 0 !important;
+      max-width: 0 !important;
+      overflow: hidden !important;
+    }
+
+    .jsdos-rso .emulator-root,
+    .jsdos-rso [class*="root"],
+    .jsdos-rso [class*="content"],
+    .jsdos-rso [class*="main"],
+    .jsdos-rso [class*="wrapper"],
+    .jsdos-rso [class*="layout"] {
+      padding-left: 0 !important;
+      margin-left: 0 !important;
+      left: 0 !important;
+      transform: none !important;
+      width: 100% !important;
+      background: var(--black) !important;
+    }
+
+    .jsdos-rso .sidebar svg,
+    .jsdos-rso .sidebar-thin svg,
+    .jsdos-rso [class*="btn"] svg,
+    .jsdos-rso [class*="button"] svg {
+      display: none !important;
+    }
+
+    .top-bar {
+      height: 16px;
+      background: var(--blue);
+      border-bottom: 2px solid var(--black);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav {
+      display: flex;
+      gap: 22px;
+      padding: 14px 22px 6px;
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 500;
+      flex-wrap: wrap;
+      background: var(--bg);
+      position: sticky;
+      top: 16px;
+      z-index: 90;
+    }
+
+    .nav a,
+    .nav span {
+      color: var(--black);
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      background: var(--yellow);
+    }
+
+    .hero {
+      padding: 12px 20px 12px;
+      width: 100%;
+      max-width: none;
+      font-family: "LoRes 21 OT", monospace;
+      font-size: clamp(34px, 5.5vw, 76px);
+      line-height: 0.94;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+    }
+
+    .launcher-view {
+      position: relative;
+      height: calc(100vh - 132px);
+      min-height: 560px;
+      padding: 8px 28px 28px;
+      display: grid;
+      grid-template-columns: minmax(250px, 29vw) minmax(220px, 25vw) minmax(380px, 46vw);
+      gap: 12px;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .launcher-column {
+      position: relative;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .stack-panel,
+    .info-panel,
+    .drive-panel {
+      border: 0;
+      background: transparent;
+      min-height: 100%;
+      position: relative;
+      overflow: visible;
+    }
+
+    .stack-panel {
+      display: grid;
+      place-items: center;
+      padding-left: 8px;
+    }
+
+    .panel-label {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 12;
+      display: inline-block;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      font-size: 10px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .disk-stack {
+      position: absolute;
+      left: 46%;
+      top: 56%;
+      width: 252px;
+      height: 396px;
+      transform: translate(-50%, -50%);
+    }
+
+    .floppy-button {
+      position: absolute;
+      left: calc(var(--i) * 13px);
+      top: calc(var(--i) * 26px);
+      width: 164px;
+      height: 176px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      text-align: left;
+      transform: rotate(calc(-8deg + var(--i) * 2deg));
+      transition: transform 0.14s ease, filter 0.14s ease;
+      z-index: calc(20 - var(--i));
+    }
+
+    /* Only the actively hovered disk lifts forward.
+       The selected disk stays in the stack so it cannot cover the disk above it. */
+
+    .floppy-button {
+      pointer-events: none;
+    }
+
+    .disk-stack {
+      cursor: url("./cursor.png") 5 4, pointer;
+    }
+
+    .floppy-button:hover,
+    .floppy-button:focus,
+    .floppy-button.is-hovered {
+      transform: translate(18px, -18px) rotate(0deg);
+      z-index: 80;
+      outline: none;
+      filter: none;
+    }
+
+    .floppy-button.is-selected {
+      outline: none;
+      filter: none;
+    }
+
+    .floppy-button.is-selected .floppy-graphic,
+    .floppy-button:hover .floppy-graphic,
+    .floppy-button:focus .floppy-graphic,
+    .floppy-button.is-hovered .floppy-graphic {
+      background: var(--yellow);
+    }
+
+    .floppy-graphic {
+      position: relative;
+      width: 164px;
+      height: 176px;
+      background: var(--white);
+      border: 2px solid var(--black);
+      box-shadow: 7px 7px 0 var(--black);
+      image-rendering: pixelated;
+    }
+
+    .floppy-graphic::before {
+      content: "";
+      position: absolute;
+      left: 16px;
+      top: 14px;
+      width: 94px;
+      height: 42px;
+      background: var(--black);
+      border: 1px solid var(--black);
+    }
+
+    .floppy-graphic::after {
+      content: "";
+      position: absolute;
+      right: 25px;
+      top: 18px;
+      width: 22px;
+      height: 34px;
+      background: var(--white);
+      border: 1px solid var(--black);
+    }
+
+    .floppy-spine {
+      position: absolute;
+      right: 14px;
+      top: 72px;
+      bottom: 16px;
+      width: 9px;
+      background: var(--black);
+    }
+
+    .floppy-paper-label {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      width: 108px;
+      height: 62px;
+      background: var(--white);
+      border: 1px solid var(--black);
+      padding: 8px 7px;
+    }
+
+    .floppy-paper-label::before,
+    .floppy-paper-label::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      height: 1px;
+      background: var(--black);
+    }
+
+    .floppy-paper-label::before {
+      top: 28px;
+    }
+
+    .floppy-paper-label::after {
+      top: 42px;
+    }
+
+    .floppy-title {
+      position: relative;
+      z-index: 2;
+      display: block;
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1.02;
+      text-transform: uppercase;
+      max-width: 88px;
+    }
+
+    .floppy-year {
+      position: absolute;
+      left: 18px;
+      top: 64px;
+      display: inline-block;
+      border: 1px solid var(--black);
+      background: var(--bg);
+      padding: 3px 5px 2px;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .info-panel {
+      padding: 34px 8px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    .info-kicker,
+    .view-kicker {
+      display: inline-flex;
+      width: fit-content;
+      max-width: 100%;
+      border: 1px solid var(--black);
+      padding: 4px 6px 3px;
+      background: var(--black);
+      color: var(--white);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .info-title,
+    .view-title {
+      margin: 0;
+      font-size: clamp(28px, 4.1vw, 54px);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: -0.05em;
+      line-height: 0.94;
+    }
+
+    .info-subtitle,
+    .view-subtitle {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.18;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .info-meta,
+    .view-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px 10px;
+      border-top: 1px solid var(--black);
+      border-bottom: 1px solid var(--black);
+      padding: 8px 0;
+      font-size: 11px;
+      line-height: 1.1;
+      text-transform: uppercase;
+      font-weight: 700;
+      max-width: 280px;
+    }
+
+    .info-text,
+    .view-text {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.42;
+    }
+
+    .insert-hint {
+      margin-top: 6px;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      font-size: 11px;
+      line-height: 1.3;
+      font-weight: 700;
+      text-transform: uppercase;
+      max-width: 280px;
+    }
+
+    .drive-panel {
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+
+    .drive-wrap {
+      position: relative;
+      width: min(100%, 520px);
+      height: min(84%, 430px);
+      display: grid;
+      place-items: center;
+    }
+
+    .drive-shadow {
+      position: absolute;
+      width: 84%;
+      height: 56%;
+      left: 9%;
+      top: 24%;
+      background: var(--black);
+      transform: translate(8px, 8px);
+    }
+
+    .drive-body {
+      position: relative;
+      z-index: 2;
+      width: 84%;
+      height: 56%;
+      border: 2px solid var(--black);
+      background: #eee8d8;
+      overflow: visible;
+    }
+
+    .drive-body::before {
+      content: "";
+      position: absolute;
+      left: -14px;
+      top: 10px;
+      bottom: -2px;
+      width: 14px;
+      background: #ddd5c3;
+      border: 2px solid var(--black);
+      border-right: 0;
+      transform: skewY(-38deg);
+      transform-origin: right top;
+    }
+
+    .drive-body::after {
+      content: "";
+      position: absolute;
+      right: -2px;
+      left: -2px;
+      bottom: -16px;
+      height: 16px;
+      background: #d8d0bc;
+      border: 2px solid var(--black);
+      border-top: 0;
+      transform: skewX(-42deg);
+      transform-origin: left top;
+      clip-path: polygon(4% 0, 100% 0, 96% 100%, 0 100%);
+      z-index: -1;
+    }
+
+    .drive-face {
+      position: absolute;
+      inset: 14px 14px 18px;
+      border: 1px solid var(--black);
+      background:
+        linear-gradient(to bottom, #d7cfba 0 34%, #ece5d4 34% 100%);
+    }
+
+    .drive-face::before {
+      content: "";
+      position: absolute;
+      left: 7%;
+      right: 7%;
+      top: 8%;
+      height: 22%;
+      background: repeating-linear-gradient(-28deg, #c9c0aa 0 2px, #ddd5c0 2px 7px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.35);
+    }
+
+    .drive-face::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 26%;
+      background: linear-gradient(to right, #d2c9b4 0 12%, #ece5d4 12% 88%, #d8d0bc 88% 100%);
+      border-top: 1px solid rgba(0, 0, 0, 0.45);
+    }
+
+    .drive-slot {
+      position: absolute;
+      left: 18%;
+      top: 67%;
+      width: 54%;
+      height: 16px;
+      background: var(--black);
+      border: 1px solid var(--black);
+      z-index: 4;
+    }
+
+    .drive-slot::after {
+      content: "";
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      top: 50%;
+      height: 1px;
+      background: #5e5e5e;
+      transform: translateY(-50%);
+    }
+
+    .drive-mouth-cover {
+      position: absolute;
+      left: 18%;
+      top: calc(67% + 15px);
+      width: 54%;
+      height: 22px;
+      z-index: 8;
+      pointer-events: none;
+      background: linear-gradient(to bottom, #e8e1cf 0 6px, transparent 6px 100%);
+    }
+
+    .drive-label {
+      position: absolute;
+      left: 50%;
+      top: 41%;
+      transform: translateX(-50%);
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      background: #dfd6a8;
+      padding: 4px 7px 3px;
+      font-family: "LoRes 21 OT", monospace;
+      font-size: 11px;
+      line-height: 1;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      z-index: 5;
+    }
+
+    .drive-led {
+      position: absolute;
+      left: 13%;
+      bottom: 16%;
+      width: 10px;
+      height: 10px;
+      border: 1px solid var(--black);
+      background: transparent;
+      z-index: 5;
+    }
+
+    .drive-panel.is-accepting .drive-led,
+    .drive-panel.is-loaded .drive-led {
+      background: #666666;
+    }
+
+    .drive-button {
+      position: absolute;
+      right: 15%;
+      bottom: 13%;
+      border: 1px solid var(--black);
+      background: #ddcf96;
+      padding: 5px 10px 4px;
+      font-size: 10px;
+      text-transform: uppercase;
+      font-weight: 700;
+      z-index: 5;
+    }
+
+    .drive-status {
+      position: absolute;
+      left: 18%;
+      bottom: 10%;
+      width: 54%;
+      border: 1px solid var(--black);
+      background: #d7d0bc;
+      padding: 4px 8px 3px;
+      font-size: 10px;
+      line-height: 1.15;
+      text-transform: uppercase;
+      font-weight: 700;
+      z-index: 5;
+      text-align: center;
+    }
+
+    .flying-floppy {
+      position: fixed !important;
+      left: 0;
+      top: 0;
+      z-index: 9999;
+      pointer-events: none;
+      transform: translate(0, 0) rotate(0deg) scale(1);
+      transform-origin: center center;
+      transition: transform 760ms cubic-bezier(0.22, 0.84, 0.18, 1), opacity 180ms linear 620ms;
+    }
+
+    .flying-floppy.is-flying {
+      transform: translate(var(--fly-x), var(--fly-y)) rotate(0deg) scale(0.76);
+      opacity: 0;
+    }
+
+    .emulator-view {
+      display: none;
+      height: calc(100vh - 58px);
+      padding: 14px 28px 28px;
+      grid-template-columns: minmax(250px, 24vw) minmax(0, 1fr);
+      gap: 18px;
+      overflow: hidden;
+    }
+
+    body.is-emulator-open .hero,
+    body.is-emulator-open .launcher-view {
+      display: none;
+    }
+
+    body.is-emulator-open .emulator-view {
+      display: grid;
+    }
+
+    .view-sidebar,
+    .view-main {
+      border: 0;
+      background: transparent;
+      min-height: 0;
+    }
+
+    .view-sidebar {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+      overflow: hidden;
+      max-width: 330px;
+    }
+
+    .view-main {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 12px;
+      padding: 0;
+      background: transparent;
+    }
+
+    .screen {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      background: var(--black);
+      border: 2px solid var(--black);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .screen>div[id^="dos-"] {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .screen.running:hover,
+    .screen.running:hover * {
+      cursor: none !important;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .button {
+      border: 1px solid var(--black);
+      padding: 8px 8px 7px;
+      text-align: center;
+      cursor: pointer;
+      background: #e0e0e0;
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .button:hover,
+    .button:focus {
+      background: #d2d2d2;
+      outline: none;
+    }
+
+    .eject-button {
+      margin-top: auto;
+      background: var(--yellow);
+    }
+
+    @media (max-width: 1000px) {
+      body {
+        overflow: auto;
+        max-height: none;
+      }
+
+      .launcher-view {
+        height: auto;
+        min-height: calc(100vh - 132px);
+        grid-template-columns: 1fr;
+        overflow: visible;
+        gap: 20px;
+      }
+
+      .stack-panel,
+      .info-panel,
+      .drive-panel {
+        min-height: 380px;
+      }
+
+      .emulator-view {
+        height: auto;
+        min-height: calc(100vh - 58px);
+        grid-template-columns: 1fr;
+        overflow: visible;
+      }
+
+      .view-main {
+        min-height: 60vh;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .nav {
+        gap: 14px;
+      }
+
+      .hero,
+      .launcher-view,
+      .emulator-view {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .button-row {
+        grid-template-columns: 1fr;
+      }
+
+      .disk-stack {
+        width: 215px;
+      }
+
+      .floppy-button {
+        width: 146px;
+        height: 158px;
+      }
+
+      .floppy-graphic {
+        width: 146px;
+        height: 158px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="top-bar"></div>
+
+  <div class="nav">
+    <a href="homepage.html">Home</a>
+    <a href="index.html">Start</a>
+    <a href="archivecatalogue.html">Catalogue</a>
+    <a href="emulators.html">Emulators</a>
+    <a href="timeline.html">Timeline</a>
+    <a href="regionsmap.html">Regions Map</a>
+    <a href="art-archive.html">Art Archive</a>
+    <a href="about.html">About</a>
+  </div>
+
+  <div class="hero">Emulators</div>
+
+  <main class="launcher-view" aria-label="Emulator launcher">
+    <section class="launcher-column stack-panel" aria-label="Floppy disk stack">
+      <div class="panel-label">Disk stack</div>
+      <div class="disk-stack" id="diskStack"></div>
+    </section>
+
+    <section class="launcher-column info-panel" aria-label="Selected game information">
+      <div class="panel-label">Selected disk</div>
+      <div class="info-kicker" id="infoKicker">Emulated Game</div>
+      <h1 class="info-title" id="infoTitle">Balance of Power</h1>
+      <p class="info-subtitle" id="infoSubtitle">Chris Crawford</p>
+      <div class="info-meta" id="infoMeta"></div>
+      <p class="info-text" id="infoText"></p>
+      <div class="insert-hint">Click floppy disk to play game</div>
+    </section>
+
+    <section class="launcher-column drive-panel" id="drivePanel" aria-label="Floppy disk reader">
+      <div class="panel-label">Reader</div>
+      <div class="drive-wrap">
+        <svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"
+          viewBox="0 0 520 430" style="width: 100%; height: auto; max-height: 100%;">
+          <defs>
+            <style>
+              .st0 {
+                fill: #ccc;
+              }
+
+              .st0,
+              .st1,
+              .st2,
+              .st3,
+              .st4 {
+                stroke: #231f20;
+                stroke-miterlimit: 2;
+              }
+
+              .st1 {
+                opacity: .4;
+              }
+
+              .st1,
+              .st5,
+              .st4 {
+                isolation: isolate;
+              }
+
+              .st1,
+              .st6,
+              .st3,
+              .st4 {
+                fill: #fff;
+              }
+
+              .st5 {
+                fill: #231f20;
+                font-family: Helvetica-Bold, Helvetica;
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0em;
+              }
+
+              .st2 {
+                fill: none;
+              }
+
+              .st7 {
+                clip-path: url(#clippath);
+              }
+
+              .st4 {
+                opacity: .3;
+              }
+
+              #driveStatus {
+                text-transform: uppercase;
+              }
+
+              .drive-panel.is-accepting #driveLed,
+              .drive-panel.is-loaded #driveLed {
+                fill: #666666 !important;
+              }
+            </style>
+            <clipPath id="clippath">
+              <rect class="st3" x="84.2" y="125.3" width="351.6" height="45.9" />
+            </clipPath>
+          </defs>
+          <g id="floppy-reader">
+            <polygon id="bottom-depth" class="st0" points="41.6 335.4 478.4 335.4 458.4 347.4 24.6 347.4 41.6 335.4" />
+            <polygon id="left-depth" class="st0" points="24.6 108.6 41.6 94.6 41.6 335.4 24.6 347.4 24.6 108.6" />
+            <rect id="drive-body" class="st3" x="41.6" y="94.6" width="436.8" height="240.8" />
+            <g id="drive-face">
+              <rect id="face-base" class="st3" x="55.6" y="108.6" width="408.8" height="208.8" />
+              <rect id="face-top-shade" class="st3" x="55.6" y="108.6" width="408.8" height="71" />
+              <line class="st4" x1="55.6" y1="179.6" x2="464.4" y2="179.6" />
+              <g>
+                <rect class="st6" x="84.2" y="125.3" width="351.6" height="45.9" />
+                <g class="st7">
+                  <g id="top-grille">
+                    <rect class="st3" x="84.2" y="125.3" width="351.6" height="45.9" />
+                    <g>
+                      <line class="st3" x1="45" y1="190" x2="120" y2="95" />
+                      <line class="st3" x1="59" y1="190" x2="134" y2="95" />
+                      <line class="st3" x1="73" y1="190" x2="148" y2="95" />
+                      <line class="st3" x1="87" y1="190" x2="162" y2="95" />
+                      <line class="st3" x1="101" y1="190" x2="176" y2="95" />
+                      <line class="st3" x1="115" y1="190" x2="190" y2="95" />
+                      <line class="st3" x1="129" y1="190" x2="204" y2="95" />
+                      <line class="st3" x1="143" y1="190" x2="218" y2="95" />
+                      <line class="st3" x1="157" y1="190" x2="232" y2="95" />
+                      <line class="st3" x1="171" y1="190" x2="246" y2="95" />
+                      <line class="st3" x1="185" y1="190" x2="260" y2="95" />
+                      <line class="st3" x1="199" y1="190" x2="274" y2="95" />
+                      <line class="st3" x1="213" y1="190" x2="288" y2="95" />
+                      <line class="st3" x1="227" y1="190" x2="302" y2="95" />
+                      <line class="st3" x1="241" y1="190" x2="316" y2="95" />
+                      <line class="st3" x1="255" y1="190" x2="330" y2="95" />
+                      <line class="st3" x1="269" y1="190" x2="344" y2="95" />
+                      <line class="st3" x1="283" y1="190" x2="358" y2="95" />
+                      <line class="st3" x1="297" y1="190" x2="372" y2="95" />
+                      <line class="st3" x1="311" y1="190" x2="386" y2="95" />
+                      <line class="st3" x1="325" y1="190" x2="400" y2="95" />
+                      <line class="st3" x1="339" y1="190" x2="414" y2="95" />
+                      <line class="st3" x1="353" y1="190" x2="428" y2="95" />
+                      <line class="st3" x1="367" y1="190" x2="442" y2="95" />
+                      <line class="st3" x1="381" y1="190" x2="456" y2="95" />
+                      <line class="st3" x1="395" y1="190" x2="470" y2="95" />
+                      <line class="st3" x1="409" y1="190" x2="484" y2="95" />
+                    </g>
+                  </g>
+                </g>
+                <rect class="st2" x="84.2" y="125.3" width="351.6" height="45.9" />
+              </g>
+              <line class="st4" x1="84.2" y1="171.2" x2="435.8" y2="171.2" />
+              <rect id="face-bottom-shade" class="st3" x="55.6" y="263.1" width="49.1" height="54.3" />
+              <rect id="face-bottom-main" class="st3" x="104.7" y="263.1" width="310.7" height="54.3" />
+              <rect id="face-bottom-right-shade" class="st3" x="415.4" y="263.1" width="49" height="54.3" />
+              <line class="st1" x1="55.6" y1="263.1" x2="464.4" y2="263.1" />
+            </g>
+            <g id="driveSlot">
+              <rect class="st3" x="142.1" y="215" width="235.9" height="16" />
+              <line class="st3" x1="152.1" y1="223" x2="368" y2="223" />
+            </g>
+            <g id="drive-led-group">
+              <rect id="driveLed" class="st3" x="80.1" y="286.3" width="10" height="10" />
+            </g>
+            <g id="drive-status-group">
+              <rect class="st3" x="142.1" y="276.8" width="235.9" height="27" />
+              <text id="driveStatus" class="st5" x="260.05" y="295" text-anchor="middle">NO DISK INSERTED</text>
+            </g>
+            <g id="driveLoadButton" class="drive-button" tabindex="0" role="button">
+              <rect class="st3" x="399.1" y="277.3" width="56" height="26" />
+              <text class="st5" transform="translate(413.7 295)">LOAD</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </section>
+  </main>
+
+  <section class="emulator-view" aria-label="Selected emulator">
+    <aside class="view-sidebar">
+      <div class="view-kicker">Emulated Game</div>
+      <h1 class="view-title" id="viewTitle"></h1>
+      <p class="view-subtitle" id="viewSubtitle"></p>
+      <div class="view-meta" id="viewMeta"></div>
+      <p class="view-text" id="viewText"></p>
+      <button class="button eject-button" type="button" id="ejectButton">Eject / Return</button>
+    </aside>
+
+    <div class="view-main">
+      <div class="screen" id="activeScreen"></div>
+      <div class="button-row">
+        <button class="button" data-run-button="true" type="button" id="runButton">Run</button>
+        <button class="button" type="button" id="fullscreenButton">Fullscreen</button>
+        <button class="button" type="button" id="changeDiskButton">Change disk</button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const games = [
+      {
+        id: 'balance-of-power',
+        title: 'Balance of Power',
+        subtitle: 'Chris Crawford',
+        year: '1985',
+        platform: 'MS-DOS',
+        genre: 'Strategy',
+        theme: 'Cold War',
+        text: 'A landmark geopolitical strategy game in which players manage superpower relations through diplomacy, aid, and nuclear brinkmanship. Its interface turns Cold War deterrence into a playable model of global power.',
+        bundle: './balance-of-power-fixed.jsdos',
+        containerId: 'dos-001'
+      },
+      {
+        id: 'hidden-agenda',
+        title: 'Hidden Agenda',
+        subtitle: 'Trans Fiction Systems',
+        year: '1988',
+        platform: 'MS-DOS',
+        genre: 'Political strategy',
+        theme: 'Latin America',
+        text: 'A political simulation set in a fictional Central American republic. Players navigate elections, insurgency, media, labour, and foreign intervention, making it a key example of late Cold War political game design.',
+        bundle: './hidden-agenda-cga-nolock.jsdos',
+        containerId: 'dos-003'
+      },
+      {
+        id: 'duke-nukem',
+        title: 'Duke Nukem',
+        subtitle: 'Apogee Software',
+        year: '1991',
+        platform: 'MS-DOS',
+        genre: 'Platformer',
+        theme: 'Side-scrolling action',
+        text: 'Apogee’s original side-scrolling action game, included here as an example of early-1990s militarised pop culture and the shift from Cold War strategy toward more spectacular action aesthetics.',
+        bundle: './dukenukem.jsdos',
+        containerId: 'dos-002'
+      },
+      {
+        id: 'crisis-in-the-kremlin',
+        title: 'Crisis in the Kremlin',
+        subtitle: 'Barbu Corporation / Spectrum HoloByte',
+        year: '1991',
+        platform: 'MS-DOS',
+        genre: 'Political sim',
+        theme: 'Soviet reform',
+        text: 'A political management game focused on the late Soviet Union, where players balance reform, ideology, party pressure, and economic crisis during the final years of the USSR.',
+        bundle: './crisis-in-the-kremlin.jsdos',
+        containerId: 'dos-004'
+      },
+      {
+        id: 'harpoon',
+        title: 'Harpoon',
+        subtitle: 'Three-Sixty Pacific',
+        year: '1989',
+        platform: 'MS-DOS',
+        genre: 'Simulation',
+        theme: 'Naval command',
+        text: 'A detailed naval warfare simulation centred on modern fleet command, missile systems, and Cold War maritime doctrine. It translates contemporary military planning into a technical playable form.',
+        bundle: './duke3d_flat.jsdos',
+        containerId: 'dos-005'
+      },
+      {
+        id: 'shadow-president',
+        title: 'Shadow President',
+        subtitle: 'DC True',
+        year: '1993',
+        platform: 'MS-DOS',
+        genre: 'Geopolitical simulation',
+        theme: 'Global crisis management',
+        text: 'A geopolitical simulation in which players act as the U.S. president, managing diplomacy, budgets, foreign crises, covert pressure, popularity, and military decisions through a dense political interface.',
+        bundle: './shadow-president.jsdos',
+        containerId: 'dos-006'
+      }
+    ];
+
+    const diskStack = document.getElementById('diskStack');
+    const infoTitle = document.getElementById('infoTitle');
+    const infoSubtitle = document.getElementById('infoSubtitle');
+    const infoMeta = document.getElementById('infoMeta');
+    const infoText = document.getElementById('infoText');
+    const drivePanel = document.getElementById('drivePanel');
+    const driveSlot = document.getElementById('driveSlot');
+    const driveStatus = document.getElementById('driveStatus');
+    const driveLoadButton = document.getElementById('driveLoadButton');
+    const activeScreen = document.getElementById('activeScreen');
+    const runButton = document.getElementById('runButton');
+    const fullscreenButton = document.getElementById('fullscreenButton');
+    const ejectButton = document.getElementById('ejectButton');
+    const changeDiskButton = document.getElementById('changeDiskButton');
+    const viewTitle = document.getElementById('viewTitle');
+    const viewSubtitle = document.getElementById('viewSubtitle');
+    const viewMeta = document.getElementById('viewMeta');
+    const viewText = document.getElementById('viewText');
+
+    let selectedGame = games[0];
+    let activeGame = null;
+    let hoveredStackGameId = null;
+    let dosInstance = null;
+    let isEmulatorRunning = false;
+    let audioContext;
+
+    function getAudioContext() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      return audioContext;
+    }
+
+    function playClickSound() {
+      const context = getAudioContext();
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(640, context.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(210, context.currentTime + 0.045);
+
+      gain.gain.setValueAtTime(0.045, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.045);
+
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start();
+      oscillator.stop(context.currentTime + 0.045);
+    }
+
+    function playRunSound() {
+      const context = getAudioContext();
+      const steps = [260, 520, 780, 1040];
+
+      steps.forEach((frequency, index) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        const startTime = context.currentTime + index * 0.045;
+        const endTime = startTime + 0.04;
+
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(frequency, startTime);
+
+        gain.gain.setValueAtTime(0.12, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, endTime);
+
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(startTime);
+        oscillator.stop(endTime);
+      });
+    }
+
+    function getGameIdFromStackPoint(event) {
+      const rect = diskStack.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      const diskWidth = 164;
+      const diskHeight = 176;
+      const stepX = 13;
+      const stepY = 26;
+      const lastDiskBottom = (games.length - 1) * stepY + diskHeight;
+      const lastDiskRight = (games.length - 1) * stepX + diskWidth;
+
+      if (x < -16 || x > lastDiskRight + 28 || y < -16 || y > lastDiskBottom + 28) {
+        return null;
+      }
+
+      const bandIndex = Math.floor(Math.max(0, y) / stepY);
+      const index = Math.max(0, Math.min(games.length - 1, bandIndex));
+      return games[index].id;
+    }
+
+    function setHoveredDisk(gameId) {
+      hoveredStackGameId = gameId;
+
+      document.querySelectorAll('.floppy-button').forEach((button) => {
+        button.classList.toggle('is-hovered', button.dataset.gameId === gameId);
+      });
+    }
+
+    function renderDiskStack() {
+      diskStack.innerHTML = '';
+
+      games.forEach((game, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'floppy-button';
+        button.dataset.gameId = game.id;
+        button.style.setProperty('--i', String(index));
+        button.setAttribute('aria-label', `Load ${game.title}`);
+
+        button.innerHTML = `
+          <div class="floppy-graphic">
+            <span class="floppy-year">${game.year}</span>
+            <span class="floppy-spine"></span>
+            <span class="floppy-paper-label"><span class="floppy-title">${game.title}</span></span>
+          </div>
+        `;
+
+        button.addEventListener('mouseenter', () => selectGame(game.id));
+        button.addEventListener('focus', () => selectGame(game.id));
+        button.addEventListener('click', () => insertDisk(game.id, button));
+
+        diskStack.appendChild(button);
+      });
+    }
+
+    function findGame(gameId) {
+      return games.find((game) => game.id === gameId) || games[0];
+    }
+
+    function gameMetaMarkup(game) {
+      return `
+        <span>${game.year}</span>
+        <span>${game.platform}</span>
+        <span>${game.genre}</span>
+        <span>${game.theme}</span>
+      `;
+    }
+
+    function selectGame(gameId) {
+      selectedGame = findGame(gameId);
+      infoTitle.textContent = selectedGame.title;
+      infoSubtitle.textContent = selectedGame.subtitle;
+      infoMeta.innerHTML = gameMetaMarkup(selectedGame);
+      infoText.textContent = selectedGame.text;
+
+      document.querySelectorAll('.floppy-button').forEach((button) => {
+        button.classList.toggle('is-selected', button.dataset.gameId === selectedGame.id);
+      });
+
+      driveStatus.textContent = `${selectedGame.title} ready`;
+    }
+
+    function insertDisk(gameId, sourceButton) {
+      const game = findGame(gameId);
+      selectGame(game.id);
+      drivePanel.classList.remove('is-loaded');
+      drivePanel.classList.add('is-accepting');
+      driveStatus.textContent = `Reading ${game.title}`;
+      playRunSound();
+
+      const sourceGraphic = sourceButton.querySelector('.floppy-graphic');
+      const clone = sourceGraphic.cloneNode(true);
+      const sourceRect = sourceGraphic.getBoundingClientRect();
+      const slotRect = driveSlot.getBoundingClientRect();
+
+      clone.classList.add('flying-floppy');
+      clone.style.left = `${sourceRect.left}px`;
+      clone.style.top = `${sourceRect.top}px`;
+      clone.style.width = `${sourceRect.width}px`;
+      clone.style.height = `${sourceRect.height}px`;
+      clone.style.setProperty('--fly-x', `${slotRect.left + slotRect.width * 0.5 - (sourceRect.left + sourceRect.width * 0.5)}px`);
+      clone.style.setProperty('--fly-y', `${slotRect.top + slotRect.height * 0.5 - (sourceRect.top + sourceRect.height * 0.5)}px`);
+      document.body.appendChild(clone);
+
+      window.requestAnimationFrame(() => {
+        clone.classList.add('is-flying');
+      });
+
+      window.setTimeout(() => {
+        clone.remove();
+        drivePanel.classList.remove('is-accepting');
+        drivePanel.classList.add('is-loaded');
+        driveStatus.textContent = `${game.title} inserted`;
+        window.history.replaceState(null, '', `#${game.id}`);
+        openEmulatorView(game.id);
+      }, 820);
+    }
+
+    function stopActiveEmulator() {
+      if (dosInstance && dosInstance.stop) {
+        try {
+          dosInstance.stop();
+        } catch (err) { }
+      }
+
+      dosInstance = null;
+      isEmulatorRunning = false;
+      runButton.textContent = 'Run';
+      activeScreen.classList.remove('running');
+    }
+
+    function openEmulatorView(gameId) {
+      stopActiveEmulator();
+      activeGame = findGame(gameId);
+      document.body.classList.add('is-emulator-open');
+
+      viewTitle.textContent = activeGame.title;
+      viewSubtitle.textContent = activeGame.subtitle;
+      viewMeta.innerHTML = gameMetaMarkup(activeGame);
+      viewText.textContent = activeGame.text;
+      activeScreen.innerHTML = `<div id="${activeGame.containerId}"></div>`;
+      window.history.replaceState(null, '', `#${activeGame.id}`);
+    }
+
+    function closeEmulatorView() {
+      stopActiveEmulator();
+      document.body.classList.remove('is-emulator-open');
+      activeScreen.innerHTML = '';
+      activeGame = null;
+      window.history.replaceState(null, '', window.location.pathname.split('/').pop() || 'emulators-option-b.html');
+      selectGame(selectedGame.id);
+    }
+
+    async function toggleActiveGame() {
+      if (!activeGame) return;
+
+      const container = document.getElementById(activeGame.containerId);
+      if (!container) return;
+
+      if (isEmulatorRunning) {
+        stopActiveEmulator();
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = '';
+      dosInstance = Dos(container, {
+        url: activeGame.bundle,
+        autoStart: true,
+        kiosk: true,
+        renderAspect: '4/3'
+      });
+
+      isEmulatorRunning = true;
+      runButton.textContent = 'Stop';
+      activeScreen.classList.add('running');
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        activeScreen.requestFullscreen().catch((err) => console.log('Fullscreen error:', err));
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    document.addEventListener('click', (event) => {
+      if (event.target.closest('.screen.running')) return;
+      if (event.target.closest('.floppy-button')) return;
+
+      const clickedElement = event.target.closest('a, button, input, select, textarea, .button, .drive-button');
+      if (!clickedElement) return;
+
+      if (clickedElement.closest('[data-run-button="true"]')) {
+        playRunSound();
+        return;
+      }
+
+      playClickSound();
+    });
+
+    diskStack.addEventListener('mousemove', (event) => {
+      const gameId = getGameIdFromStackPoint(event);
+      if (!gameId) {
+        setHoveredDisk(null);
+        return;
+      }
+
+      setHoveredDisk(gameId);
+      selectGame(gameId);
+    });
+
+    diskStack.addEventListener('mouseleave', () => {
+      setHoveredDisk(null);
+    });
+
+    diskStack.addEventListener('click', (event) => {
+      const gameId = getGameIdFromStackPoint(event) || selectedGame.id;
+      const selectedButton = document.querySelector(`.floppy-button[data-game-id="${gameId}"]`);
+      if (selectedButton) {
+        insertDisk(gameId, selectedButton);
+      }
+    });
+
+    runButton.addEventListener('click', toggleActiveGame);
+    fullscreenButton.addEventListener('click', toggleFullscreen);
+    ejectButton.addEventListener('click', closeEmulatorView);
+    changeDiskButton.addEventListener('click', closeEmulatorView);
+    driveLoadButton.addEventListener('click', () => {
+      const selectedButton = document.querySelector(`.floppy-button[data-game-id="${selectedGame.id}"]`);
+      if (selectedButton) insertDisk(selectedGame.id, selectedButton);
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && document.body.classList.contains('is-emulator-open')) {
+        closeEmulatorView();
+      }
+    });
+
+    renderDiskStack();
+    selectGame((window.location.hash || '').replace('#', '') || games[0].id);
+
+    if (window.location.hash) {
+      openEmulatorView(window.location.hash.replace('#', ''));
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Regions Map</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #e2dcc4;
+            --card: #ffffff;
+            --white: #ffffff;
+            --black: #000000;
+            --blue: #0000ff;
+            --yellow: #ffff00;
+            --muted: #d7d1bb;
+            --rounded-box: 5px;
+            background-color: var(--blue) !important;
+        }
+
+        html {
+            background-color: var(--blue) !important;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg) !important;
+            color: var(--black);
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            height: 16px;
+            background: var(--blue);
+            border-bottom: 2px solid var(--black);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav {
+            display: flex;
+            gap: 22px;
+            padding: 14px 22px 6px;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 500;
+            flex-wrap: wrap;
+            background: var(--bg);
+            position: sticky;
+            top: 16px;
+            z-index: 90;
+        }
+
+        .nav a,
+        .nav span {
+            color: var(--black);
+            text-decoration: none;
+        }
+
+        .nav a:hover {
+            background: var(--yellow);
+        }
+
+        .hero {
+            padding: 12px 20px 18px;
+            width: 100%;
+            max-width: none;
+            font-family: "LoRes 21 OT", monospace;
+            font-size: clamp(34px, 5.8vw, 82px);
+            line-height: 0.94;
+            letter-spacing: -0.03em;
+            text-transform: uppercase;
+        }
+
+        .map-shell {
+            padding: 0;
+        }
+
+        .map-frame {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 120px);
+            overflow: hidden;
+        }
+
+        .map-image {
+            position: absolute;
+            inset: 0;
+            background-image: url('./map.png');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        .map-caption {
+            position: absolute;
+            left: 12px;
+            bottom: 12px;
+            z-index: 3;
+            background: var(--white);
+            border: 1px solid var(--black);
+            padding: 6px 8px 5px;
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .hotspot {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            z-index: 4;
+        }
+
+        .hotspot a {
+            display: block;
+            position: relative;
+            width: 14px;
+            height: 14px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            background: var(--yellow);
+            border: 1px solid var(--black);
+            box-shadow: 3px 3px 0 var(--black);
+        }
+
+        .label {
+            position: absolute;
+            left: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--white);
+            border: 1px solid var(--black);
+            padding: 5px 7px 4px;
+            font-size: 10px;
+            line-height: 1;
+            text-transform: uppercase;
+            font-weight: 700;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.12s ease;
+        }
+
+        .hotspot:hover .label,
+        .hotspot a:focus .label {
+            opacity: 1;
+        }
+
+        .label.left {
+            left: auto;
+            right: 22px;
+        }
+
+        .regions-list {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 10px;
+            padding: 0 20px 28px;
+        }
+
+        .region-card {
+            grid-column: span 4;
+            border: 1px solid var(--black);
+            background: var(--card);
+            padding: 12px 12px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            scroll-margin-top: 110px;
+        }
+
+        .card-kicker {
+            display: inline-flex;
+            width: fit-content;
+            max-width: 100%;
+            border: 1px solid var(--black);
+            padding: 4px 6px 3px;
+            background: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: clamp(18px, 1.8vw, 26px);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: -0.03em;
+            line-height: 1.02;
+        }
+
+        .card-subtitle {
+            margin: 0;
+            font-size: 12px;
+            text-transform: uppercase;
+            line-height: 1.18;
+            font-weight: 500;
+        }
+
+        .card-text {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.42;
+        }
+
+        .card-footer {
+            margin-top: auto;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: end;
+            gap: 8px;
+            padding-top: 10px;
+            border-top: 1px solid var(--black);
+            font-size: 11px;
+            text-transform: uppercase;
+            line-height: 1.1;
+        }
+
+        .card-footer a {
+            color: var(--black);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        body,
+        a,
+        button,
+        input,
+        select,
+        .hotspot,
+        .region-card {
+            cursor: url('./cursor.png') 5 4, auto;
+        }
+
+        a:hover,
+        .hotspot:hover,
+        .region-card:hover {
+            cursor: url('./cursor.png') 5 4, pointer;
+        }
+
+        @media (max-width: 1100px) {
+            .regions-list {
+                grid-template-columns: repeat(8, minmax(0, 1fr));
+            }
+
+            .region-card {
+                grid-column: span 4;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .nav {
+                gap: 14px;
+            }
+
+            .hero,
+            .map-shell,
+            .regions-list {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+
+            .map-frame {
+                min-height: 60vh;
+            }
+
+            .regions-list {
+                grid-template-columns: 1fr;
+            }
+
+            .region-card {
+                grid-column: auto;
+            }
+
+            .label,
+            .label.left {
+                left: 50%;
+                right: auto;
+                top: auto;
+                bottom: 22px;
+                transform: translateX(-50%);
+            }
+        }
+
+        @font-face {
+            font-family: "LoRes 21 OT";
+            src: url("/fonts/LoRes21OT-Regular.woff2") format("woff2"),
+                url("/fonts/LoRes21OT-Regular.woff") format("woff");
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="top-bar"></div>
+
+    <div class="nav">
+        <a href="homepage.html">Home</a>
+        <a href="index.html">Start</a>
+        <a href="archivecatalogue.html">Catalogue</a>
+        <a href="emulators.html">Emulators</a>
+        <a href="timeline.html">Timeline</a>
+        <a href="regionsmap.html">Regions Map</a>
+        <a href="art-archive.html">Art Archive</a>
+        <a href="about.html">About</a>
+    </div>
+
+    <div class="hero">Regions Map</div>
+
+    <section class="map-shell">
+        <div class="map-frame">
+            <div class="map-image"></div>
+
+
+            <div class="hotspot" style="top: 42%; left: 55%;">
+                <a href="#berlin" aria-label="Berlin">
+                    <div class="dot"></div>
+                    <div class="label">Berlin</div>
+                </a>
+            </div>
+
+            <div class="hotspot" style="top: 48%; left: 52%;">
+                <a href="#central-europe" aria-label="Central Europe">
+                    <div class="dot"></div>
+                    <div class="label">Central Europe</div>
+                </a>
+            </div>
+
+            <div class="hotspot" style="top: 45%; left: 32%;">
+                <a href="#north-atlantic" aria-label="North Atlantic">
+                    <div class="dot"></div>
+                    <div class="label">North Atlantic</div>
+                </a>
+            </div>
+
+            <div class="hotspot" style="top: 58%; left: 67%;">
+                <a href="#persian-gulf" aria-label="Persian Gulf">
+                    <div class="dot"></div>
+                    <div class="label left">Persian Gulf</div>
+                </a>
+            </div>
+
+            <div class="hotspot" style="top: 65%; left: 28%;">
+                <a href="#latin-america" aria-label="Latin America">
+                    <div class="dot"></div>
+                    <div class="label">Latin America</div>
+                </a>
+            </div>
+
+            <div class="hotspot" style="top: 47%; left: 70%;">
+                <a href="#korean-peninsula" aria-label="Korean Peninsula">
+                    <div class="dot"></div>
+                    <div class="label left">Korean Peninsula</div>
+                </a>
+            </div>
+
+            <div class="hotspot" style="top: 52%; left: 66%;">
+                <a href="#afghanistan" aria-label="Afghanistan">
+                    <div class="dot"></div>
+                    <div class="label left">Afghanistan</div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="regions-list">
+        <article class="region-card" id="central-europe">
+            <div class="card-kicker">Region</div>
+            <h2 class="card-title">Central Europe Theatre</h2>
+            <p class="card-subtitle">Map entry point</p>
+            <p class="card-text">A recurring geopolitical zone represented across strategy games, essays, and archive
+                material. This filler entry mirrors the region card structure from the catalogue page.</p>
+            <div class="card-footer">
+                <a href="archivecatalogue.html">Back to catalogue</a>
+                <span>Map</span>
+            </div>
+        </article>
+
+        <article class="region-card" id="berlin">
+            <div class="card-kicker">Region</div>
+            <h2 class="card-title">Berlin</h2>
+            <p class="card-subtitle">Checkpoint and symbolic centre</p>
+            <p class="card-text">A focal point for divided-city imagery, Cold War symbolism, and cartographic framing
+                within the wider archive.</p>
+            <div class="card-footer">
+                <a href="archivecatalogue.html">Back to catalogue</a>
+                <span>Map</span>
+            </div>
+        </article>
+
+        <article class="region-card" id="north-atlantic">
+            <div class="card-kicker">Region</div>
+            <h2 class="card-title">North Atlantic</h2>
+            <p class="card-subtitle">Naval patrol zones</p>
+            <p class="card-text">Used here as a filler linked label for maritime strategy, submarine tracking, and
+                sea-lane control across simulation titles.</p>
+            <div class="card-footer">
+                <a href="archivecatalogue.html">Back to catalogue</a>
+                <span>Map</span>
+            </div>
+        </article>
+
+        <article class="region-card" id="persian-gulf">
+            <div class="card-kicker">Region</div>
+            <h2 class="card-title">Persian Gulf Theatre</h2>
+            <p class="card-subtitle">Conflict zone across simulations</p>
+            <p class="card-text">A region entry tying together briefing maps, tactical overlays, and later broadcast-war
+                imagery within the archive.</p>
+            <div class="card-footer">
+                <a href="archivecatalogue.html">Back to catalogue</a>
+                <span>1991</span>
+            </div>
+        </article>
+
+        <article class="region-card" id="latin-america">
+            <div class="card-kicker">Region</div>
+            <h2 class="card-title">Latin America</h2>
+            <p class="card-subtitle">Counterinsurgency zones</p>
+            <p class="card-text">A filler marker for recurring intervention narratives, proxy conflict mapping, and
+                geopolitical simplification in strategy interfaces.</p>
+            <div class="card-footer">
+                <a href="archivecatalogue.html">Back to catalogue</a>
+                <span>Map</span>
+            </div>
+        </article>
+
+        <article class="region-card" id="korean-peninsula">
+            <div class="card-kicker">Region</div>
+            <h2 class="card-title">Korean Peninsula</h2>
+            <p class="card-subtitle">Proxy frontier</p>
+            <p class="card-text">Included as a linked hotspot to make the map feel populated and to provide another
+                navigational anchor for future expansion.</p>
+            <div class="card-footer">
+                <a href="archivecatalogue.html">Back to catalogue</a>
+                <span>Map</span>
+            </div>
+        </article>
+
+        <article class="region-card" id="afghanistan">
+            <div class="card-kicker">Region</div>
+            <h2 class="card-title">Afghanistan</h2>
+            <p class="card-subtitle">Mountain warfare and proxy struggle</p>
+            <p class="card-text">A linked filler region card that can later be expanded into essays, timeline jumps, or
+                art archive references.</p>
+            <div class="card-footer">
+                <a href="archivecatalogue.html">Back to catalogue</a>
+                <span>Map</span>
+            </div>
+        </article>
+    </section>
+
+
+    <script>
+        (function () {
+            let audioContext = null;
+
+            function getAudioContext() {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                return audioContext;
+            }
+
+            function playTone(frequency, duration, volume, delay) {
+                const ctx = getAudioContext();
+                const startTime = ctx.currentTime + (delay || 0);
+                const oscillator = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(frequency, startTime);
+
+                gain.gain.setValueAtTime(volume, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+                oscillator.connect(gain);
+                gain.connect(ctx.destination);
+
+                oscillator.start(startTime);
+                oscillator.stop(startTime + duration);
+            }
+
+            function playClickSound() {
+                playTone(620, 0.035, 0.045, 0);
+                playTone(310, 0.025, 0.03, 0.025);
+            }
+
+            function playRunSound() {
+                playTone(220, 0.045, 0.11, 0);
+                playTone(440, 0.045, 0.10, 0.045);
+                playTone(880, 0.055, 0.09, 0.09);
+            }
+
+            function isRunControl(element) {
+                const control = element.closest('.button, button, a');
+                if (!control) return false;
+
+                const onclickValue = control.getAttribute('onclick') || '';
+                const controlText = (control.textContent || '').trim().toLowerCase();
+
+                return onclickValue.includes('toggleGame') || controlText === 'run' || controlText === 'stop';
+            }
+
+            function isClickableElement(element) {
+                return element.closest('a, button, input, select, textarea, .button, .card-link, .nav-card, .region-card, .hotspot a, .start-button, .click-sound');
+            }
+
+            function shouldIgnoreSound(element) {
+                return element.closest('.screen.running');
+            }
+
+            document.addEventListener('pointerdown', function (event) {
+                const target = event.target;
+
+                if (!target || shouldIgnoreSound(target) || !isClickableElement(target)) {
+                    return;
+                }
+
+                if (isRunControl(target)) {
+                    playRunSound();
+                } else {
+                    playClickSound();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+
+                const target = event.target;
+
+                if (!target || shouldIgnoreSound(target) || !isClickableElement(target)) {
+                    return;
+                }
+
+                if (isRunControl(target)) {
+                    playRunSound();
+                } else {
+                    playClickSound();
+                }
+            });
+        })();
+    </script>
+
+</body>
+
+</html>
